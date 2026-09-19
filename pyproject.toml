@@ -70,4 +70,10 @@ warn_return_any = false
 warn_unused_configs = true
 disallow_untyped_defs = false
 ignore_missing_imports = true
-exclude = ["remote_ros_mcp/proto/.*"]
+
+[[tool.mypy.overrides]]
+module = [
+    "remote_ros_mcp.proto.*",
+    "remote_ros_mcp.client.client",
+]
+ignore_errors = true

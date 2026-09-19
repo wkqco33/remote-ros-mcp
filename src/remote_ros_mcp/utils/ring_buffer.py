@@ -11,18 +11,19 @@ class TopicRingBuffer:
 
     def __init__(self, capacity: int = 50):
         self.capacity = capacity
-        self._buffer = collections.deque(maxlen=capacity)
+        self._buffer: collections.deque[Dict[str, Any]] = collections.deque(maxlen=capacity)
         self._lock = threading.Lock()
         self._last_received_time: float = 0.0
 
     def add(self, message: Dict[str, Any]):
         with self._lock:
+            ts = float(time.time())
             entry = {
-                "timestamp": time.time(),
+                "timestamp": ts,
                 "data": message,
             }
             self._buffer.append(entry)
-            self._last_received_time = entry["timestamp"]
+            self._last_received_time = ts
 
     def get_latest(self) -> Optional[Dict[str, Any]]:
         with self._lock:

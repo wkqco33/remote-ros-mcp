@@ -20,6 +20,20 @@ from remote_ros_mcp.utils.logger import get_logger, setup_logger
 logger = get_logger("remote_ros_mcp.cli")
 
 
+def _write_stdout(ctx: CommandContext, text: str):
+    if ctx.stdout:
+        ctx.stdout.write(text)
+    else:
+        sys.stdout.write(text)
+
+
+def _write_stderr(ctx: CommandContext, text: str):
+    if ctx.stderr:
+        ctx.stderr.write(text)
+    else:
+        sys.stderr.write(text)
+
+
 def _get_cli_overrides(ctx: CommandContext) -> Dict[str, Any]:
     """Extract CLI overrides from flags."""
     overrides: Dict[str, Any] = {}
@@ -55,15 +69,18 @@ def handle_run(ctx: CommandContext) -> int:
     """Handle 'run' command: launch FastMCP server."""
     overrides = _get_cli_overrides(ctx)
     cfg = BridgeConfig.load(cli_overrides=overrides)
-    transport = str(ctx.flags.get("transport") or "stdio")
+    transport_raw = str(ctx.flags.get("transport") or "stdio")
+    transport_choice = "stdio" if transport_raw != "sse" else "sse"
 
     logger.info("Starting remote-ros-mcp server connected to %s...", cfg.target)
-    ctx.stderr.write(
+    panel_msg = (
         ctx.terminal.panel("remote-ros-mcp", f"Starting MCP server connected to {cfg.target}")
-        + "\n"
+        if ctx.terminal
+        else f"Starting MCP server connected to {cfg.target}"
     )
+    _write_stderr(ctx, panel_msg + "\n")
     mcp = create_mcp_server(config=cfg)
-    mcp.run(transport=transport)
+    mcp.run(transport=transport_choice)  # type: ignore
     return 0
 
 
@@ -77,22 +94,26 @@ def handle_test_connection(ctx: CommandContext) -> int:
     try:
         res = client.check_health()
         if as_json:
-            ctx.stdout.write(json.dumps(res, indent=2) + "\n")
+            _write_stdout(ctx, json.dumps(res, indent=2) + "\n")
         else:
             if res.get("serving"):
-                ctx.stderr.write(
+                _write_stderr(
+                    ctx,
                     f"✓ Successfully connected to wrosbridge at {cfg.target}\n"
-                    f"Status: {res.get('status')}\n"
+                    f"Status: {res.get('status')}\n",
                 )
             else:
-                ctx.stderr.write(f"! Connected to {cfg.target} but status: {res.get('status')}\n")
+                _write_stderr(
+                    ctx,
+                    f"! Connected to {cfg.target} but status: {res.get('status')}\n",
+                )
         return 0
     except Exception as e:
         logger.error("Failed to connect to wrosbridge at %s: %s", cfg.target, e)
         if as_json:
-            ctx.stdout.write(json.dumps({"serving": False, "error": str(e)}, indent=2) + "\n")
+            _write_stdout(ctx, json.dumps({"serving": False, "error": str(e)}, indent=2) + "\n")
         else:
-            ctx.stderr.write(f"✗ Failed to connect to wrosbridge at {cfg.target}: {e}\n")
+            _write_stderr(ctx, f"✗ Failed to connect to wrosbridge at {cfg.target}: {e}\n")
         return 1
 
 
@@ -117,21 +138,22 @@ def handle_inspect(ctx: CommandContext) -> int:
             "services": services,
         }
         if as_json:
-            ctx.stdout.write(json.dumps(data, indent=2) + "\n")
+            _write_stdout(ctx, json.dumps(data, indent=2) + "\n")
         else:
-            ctx.stderr.write(
+            _write_stderr(
+                ctx,
                 f"ROS2 Graph Summary ({cfg.target})\n"
                 f"Nodes ({len(nodes)}): {', '.join(n['name'] for n in nodes)}\n"
                 f"Topics ({len(topics)}): {', '.join(t['topic'] for t in topics)}\n"
-                f"Services ({len(services)}): {', '.join(services)}\n"
+                f"Services ({len(services)}): {', '.join(services)}\n",
             )
         return 0
     except Exception as e:
         logger.error("Failed to inspect graph: %s", e)
         if as_json:
-            ctx.stdout.write(json.dumps({"error": str(e)}, indent=2) + "\n")
+            _write_stdout(ctx, json.dumps({"error": str(e)}, indent=2) + "\n")
         else:
-            ctx.stderr.write(f"✗ Failed to inspect graph: {e}\n")
+            _write_stderr(ctx, f"✗ Failed to inspect graph: {e}\n")
         return 1
 
 
@@ -143,7 +165,7 @@ def handle_inspect(ctx: CommandContext) -> int:
 def handle_config_path(ctx: CommandContext) -> int:
     """Print configuration file path."""
     p = get_config_path()
-    ctx.stdout.write(str(p) + "\n")
+    _write_stdout(ctx, str(p) + "\n")
     return 0
 
 
@@ -152,14 +174,15 @@ def handle_config_init(ctx: CommandContext) -> int:
     force = bool(ctx.flags.get("force"))
     p = get_config_path()
     if p.exists() and not force:
-        ctx.stderr.write(
-            f"Config file already exists at {p}\nUse --force to overwrite with defaults.\n"
+        _write_stderr(
+            ctx,
+            f"Config file already exists at {p}\nUse --force to overwrite with defaults.\n",
         )
         return 0
 
     defaults = BridgeConfig.default_dict()
     save_config_file(defaults, p)
-    ctx.stderr.write(f"✓ Created configuration file at {p}\n")
+    _write_stderr(ctx, f"✓ Created configuration file at {p}\n")
     return 0
 
 
@@ -176,12 +199,12 @@ def handle_config_show(ctx: CommandContext) -> int:
         data = asdict(cfg)
 
     if as_json:
-        ctx.stdout.write(json.dumps(data, indent=2) + "\n")
+        _write_stdout(ctx, json.dumps(data, indent=2) + "\n")
     else:
         p = get_config_path()
-        ctx.stderr.write(f"remote-ros-mcp Configuration (source: {p})\n")
+        _write_stderr(ctx, f"remote-ros-mcp Configuration (source: {p})\n")
         for k, v in data.items():
-            ctx.stderr.write(f"  {k}: {v}\n")
+            _write_stderr(ctx, f"  {k}: {v}\n")
     return 0
 
 
@@ -193,7 +216,10 @@ def handle_config_set(ctx: CommandContext) -> int:
 
     if key not in defaults:
         allowed = ", ".join(defaults.keys())
-        ctx.stderr.write(f"Error: Unknown configuration key '{key}'\nAllowed keys: {allowed}\n")
+        _write_stderr(
+            ctx,
+            f"Error: Unknown configuration key '{key}'\nAllowed keys: {allowed}\n",
+        )
         return 2
 
     data = load_config_file()
@@ -208,13 +234,13 @@ def handle_config_set(ctx: CommandContext) -> int:
         try:
             parsed_val = int(value)
         except ValueError:
-            ctx.stderr.write(f"Error: '{value}' is not a valid integer\n")
+            _write_stderr(ctx, f"Error: '{value}' is not a valid integer\n")
             return 2
     elif isinstance(default_val, float):
         try:
             parsed_val = float(value)
         except ValueError:
-            ctx.stderr.write(f"Error: '{value}' is not a valid float\n")
+            _write_stderr(ctx, f"Error: '{value}' is not a valid float\n")
             return 2
     elif value.lower() in ("null", "none"):
         parsed_val = None
@@ -224,7 +250,7 @@ def handle_config_set(ctx: CommandContext) -> int:
     data[key] = parsed_val
     save_config_file(data)
     p = get_config_path()
-    ctx.stderr.write(f"✓ Set '{key}' = {parsed_val} in {p}\n")
+    _write_stderr(ctx, f"✓ Set '{key}' = {parsed_val} in {p}\n")
     return 0
 
 
