@@ -66,12 +66,28 @@ cd remote-ros-mcp
 uv sync
 ```
 
-### 3. Connection Configuration
-Configure environment variables:
+### 3. Configuration Management
+`remote-ros-mcp` adheres to OS-standard configuration paths (XDG on Linux, Application Support on macOS, AppData on Windows) with layered precedence: **CLI flags > Environment Variables > config.json > Defaults**.
+
+- **Default Config Path**:
+  - Linux: `~/.config/remote-ros-mcp/config.json`
+  - macOS: `~/Library/Application Support/remote-ros-mcp/config.json`
+  - Windows: `%APPDATA%\remote-ros-mcp\config.json`
+  - *Override Variable*: `REMOTE_ROS_CONFIG_PATH`
+
 ```bash
-export ROS_BRIDGE_HOST="127.0.0.1"      # Remote wrosbridge IP or hostname
-export ROS_BRIDGE_PORT="50051"          # wrosbridge gRPC port
-export ROS_BRIDGE_API_KEY="secret-key"  # If authentication is enabled
+# Print config path
+uv run remote-ros-mcp config path
+
+# Initialize default configuration
+uv run remote-ros-mcp config init
+
+# Set configuration parameters
+uv run remote-ros-mcp config set host 192.168.1.100
+uv run remote-ros-mcp config set port 50051
+
+# View active configuration
+uv run remote-ros-mcp config show --json
 ```
 
 ### 4. CLI Diagnostics

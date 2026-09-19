@@ -66,18 +66,29 @@ C++17 및 ROS2 Jazzy 기반의 고성능 gRPC API Gateway인 [`wrosbridge`](../w
 - Python 3.11 이상
 - [`uv`](https://github.com/astral-sh/uv) (권장) 또는 `pip`
 
-### 2. 설치 및 환경 설정
+### 2. 설정 파일 및 환경 설정
+`remote-ros-mcp`는 OS별 표준 디렉토리에 위치하는 `config.json` 설정 파일과 환경 변수, CLI 인자를 계층적으로 지원합니다:
+- **플랫폼별 기본 설정 파일 위치**:
+  - Linux: `~/.config/remote-ros-mcp/config.json`
+  - macOS: `~/Library/Application Support/remote-ros-mcp/config.json`
+  - Windows: `%APPDATA%\remote-ros-mcp\config.json`
+  - *경로 재정의 환경변수*: `REMOTE_ROS_CONFIG_PATH`
+
 ```bash
-# 레포지토리 복제 및 이동
-cd /home/wkqco/Workspace/ros/remote-ros-mcp
+# 설정 파일 경로 확인
+uv run remote-ros-mcp config path
 
-# 의존성 설치
-uv sync
+# 기본 설정 파일 초기화
+uv run remote-ros-mcp config init
 
-# 연결 설정 (환경 변수)
-export ROS_BRIDGE_HOST="127.0.0.1"      # 원격 wrosbridge IP 또는 호스트명
-export ROS_BRIDGE_PORT="50051"          # wrosbridge gRPC 포트
-export ROS_BRIDGE_API_KEY="your-key"    # 필요한 경우 API 키 설정
+# 설정 값 변경 (host, port, api_key, use_tls, timeout_sec 등)
+uv run remote-ros-mcp config set host 192.168.1.100
+uv run remote-ros-mcp config set port 50051
+uv run remote-ros-mcp config set use_tls false
+
+# 현재 활성 설정 조회 (JSON 출력 지원)
+uv run remote-ros-mcp config show
+uv run remote-ros-mcp config show --json
 ```
 
 ### 3. 연결 상태 점검 (CLI)

@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2026-09-20
 
 ### Added
+- **Configuration File Management (`remote-ros-mcp config`)**:
+  - Platform-standard configuration directory resolution (XDG on Linux, Application Support on macOS, AppData on Windows).
+  - Subcommands: `init` (create default file), `path` (print location), `show` (display active/file config with `--json`), `set` (modify and type-cast settings).
+  - Layered configuration hierarchy: `CLI Flags > Environment Variables > config.json > Defaults`.
 - **MCP Server Core**: FastMCP-based standard Model Context Protocol server exposing ROS2 robotics endpoints via stdio transport.
 - **wrosbridge gRPC Gateway Integration**:
   - Full client support for `Health`, `AdminService`, `TopicService`, `ServiceService`, and `ActionService`.

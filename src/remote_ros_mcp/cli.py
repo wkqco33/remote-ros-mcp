@@ -2,12 +2,18 @@
 
 import json
 import sys
+from dataclasses import asdict
 
 import click
 from rich.console import Console
 
 from remote_ros_mcp.client import WrosbridgeClient
-from remote_ros_mcp.config import BridgeConfig
+from remote_ros_mcp.config import (
+    BridgeConfig,
+    get_config_path,
+    load_config_file,
+    save_config_file,
+)
 from remote_ros_mcp.server.app import create_mcp_server
 
 console = Console(stderr=True)
@@ -23,18 +29,125 @@ console = Console(stderr=True)
 def cli(ctx, host, port, api_key, tls, timeout):
     """remote-ros-mcp: MCP server and verification tools for ROS2 robotics development."""
     ctx.ensure_object(dict)
-    cfg = BridgeConfig.from_env()
-    if host:
-        cfg.host = host
-    if port:
-        cfg.port = port
-    if api_key:
-        cfg.api_key = api_key
+    cli_overrides = {}
+    if host is not None:
+        cli_overrides["host"] = host
+    if port is not None:
+        cli_overrides["port"] = port
+    if api_key is not None:
+        cli_overrides["api_key"] = api_key
     if tls is not None:
-        cfg.use_tls = tls
-    if timeout:
-        cfg.timeout_sec = timeout
+        cli_overrides["use_tls"] = tls
+    if timeout is not None:
+        cli_overrides["timeout_sec"] = timeout
+
+    cfg = BridgeConfig.load(cli_overrides=cli_overrides)
     ctx.obj["config"] = cfg
+    ctx.obj["cli_overrides"] = cli_overrides
+
+
+# -------------------------------------------------------------
+# Config Subcommands (init, path, show, set)
+# -------------------------------------------------------------
+
+
+@cli.group(name="config")
+def config_group():
+    """Manage configuration file for remote-ros-mcp."""
+    pass
+
+
+@config_group.command(name="path")
+def config_path():
+    """Display the platform-specific path of the configuration file."""
+    p = get_config_path()
+    click.echo(str(p))
+
+
+@config_group.command(name="init")
+@click.option("--force", "-f", is_flag=True, help="Overwrite existing configuration file")
+def config_init(force):
+    """Initialize a default configuration file."""
+    p = get_config_path()
+    if p.exists() and not force:
+        console.print(f"[bold yellow]Config file already exists at {p}[/bold yellow]")
+        console.print("Use --force to overwrite with defaults.")
+        return
+
+    defaults = BridgeConfig.default_dict()
+    save_config_file(defaults, p)
+    console.print(f"[bold green]✓ Created configuration file at {p}[/bold green]")
+
+
+@config_group.command(name="show")
+@click.option("--json", "as_json", is_flag=True, help="Output configuration as JSON")
+@click.option("--file-only", is_flag=True, help="Show only values stored in config file")
+@click.pass_context
+def config_show(ctx, as_json, file_only):
+    """Show current configuration values."""
+    if file_only:
+        data = load_config_file()
+    else:
+        cfg: BridgeConfig = ctx.obj["config"]
+        data = asdict(cfg)
+
+    if as_json:
+        click.echo(json.dumps(data, indent=2))
+    else:
+        p = get_config_path()
+        console.print(f"[bold cyan]remote-ros-mcp Configuration[/bold cyan] (source: {p})")
+        for k, v in data.items():
+            console.print(f"  {k}: [bold]{v}[/bold]")
+
+
+@config_group.command(name="set")
+@click.argument("key")
+@click.argument("value")
+def config_set(key, value):
+    """Set a configuration value in the configuration file.
+
+    Example: remote-ros-mcp config set host 192.168.1.100
+    """
+    defaults = BridgeConfig.default_dict()
+    if key not in defaults:
+        console.print(f"[bold red]Error: Unknown configuration key '{key}'[/bold red]")
+        console.print(f"Allowed keys: {', '.join(defaults.keys())}")
+        sys.exit(2)
+
+    data = load_config_file()
+    if not data:
+        data = defaults
+
+    # Type casting based on default types
+    default_val = defaults[key]
+    if isinstance(default_val, bool):
+        parsed_val = value.lower() in ("true", "1", "yes", "y", "t")
+    elif isinstance(default_val, int):
+        try:
+            parsed_val = int(value)
+        except ValueError:
+            console.print(f"[bold red]Error: '{value}' is not a valid integer[/bold red]")
+            sys.exit(2)
+    elif isinstance(default_val, float):
+        try:
+            parsed_val = float(value)
+        except ValueError:
+            console.print(f"[bold red]Error: '{value}' is not a valid float[/bold red]")
+            sys.exit(2)
+    elif value.lower() in ("null", "none"):
+        parsed_val = None
+    else:
+        parsed_val = value
+
+    data[key] = parsed_val
+    save_config_file(data)
+    p = get_config_path()
+    console.print(f"[bold green]✓ Set '{key}' = {parsed_val}[/bold green] in {p}")
+
+
+# -------------------------------------------------------------
+# Runtime & Diagnostic Commands
+# -------------------------------------------------------------
 
 
 @cli.command(name="run")
