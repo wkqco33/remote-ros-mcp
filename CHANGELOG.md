@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2026-09-20
 
 ### Added
+- **Ecosystem Integration (`wpycli`, `wpyconf`, `wpylog`)**:
+  - Replaced ad-hoc CLI/config with the `wpy` library suite.
+  - **`wpycli`**: Clean command hierarchy, flag sets, terminal styling, and stdout/stderr separation.
+  - **`wpyconf` (`wconfig`)**: Multi-source configuration layering and platform user config directories.
+  - **`wpylog` (`wlogger`)**: Unified structured logging for runtime diagnostics.
 - **Command Alias `rrmcp`**: Added `rrmcp` entrypoint alias in `pyproject.toml` for fast invocation (`uv run rrmcp ...`).
 - **Comprehensive `.gitignore` Generated via `iggen`**: Standardized multi-platform rules for Linux, macOS, Windows, Python, and VS Code.
 - **Configuration File Management (`remote-ros-mcp config`)**:

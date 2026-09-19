@@ -1,11 +1,11 @@
 """Unit tests for config file management and CLI config subcommands."""
 
+import io
 import json
 
 import pytest
-from click.testing import CliRunner
 
-from remote_ros_mcp.cli import cli
+from remote_ros_mcp.cli import build_cli
 from remote_ros_mcp.config import (
     BridgeConfig,
     get_config_path,
@@ -72,46 +72,53 @@ def test_bridge_config_load_priority(temp_config_dir, monkeypatch):
 
 
 def test_cli_config_path(temp_config_dir):
-    runner = CliRunner()
-    result = runner.invoke(cli, ["config", "path"])
-    assert result.exit_code == 0
-    assert str(temp_config_dir) in result.output.strip()
+    cmd = build_cli()
+    out = io.StringIO()
+    code = cmd.execute(["config", "path"], stdout=out)
+    assert code == 0
+    assert str(temp_config_dir) in out.getvalue().strip()
 
 
 def test_cli_config_init_and_show(temp_config_dir):
-    runner = CliRunner()
+    cmd = build_cli()
+    out = io.StringIO()
+    err = io.StringIO()
+
     # Init config
-    res_init = runner.invoke(cli, ["config", "init"])
-    assert res_init.exit_code == 0
+    code_init = cmd.execute(["config", "init"], stdout=out, stderr=err)
+    assert code_init == 0
     assert temp_config_dir.exists()
 
     # Show config json
-    res_show = runner.invoke(cli, ["config", "show", "--json"])
-    assert res_show.exit_code == 0
-    data = json.loads(res_show.output)
+    out_show = io.StringIO()
+    code_show = cmd.execute(["config", "show", "--json"], stdout=out_show)
+    assert code_show == 0
+    data = json.loads(out_show.getvalue())
     assert data["host"] == "127.0.0.1"
     assert data["port"] == 50051
 
     # Init without --force should inform already exists
-    res_init_again = runner.invoke(cli, ["config", "init"])
-    assert "already exists" in res_init_again.output.lower() or res_init_again.exit_code == 0
+    err_again = io.StringIO()
+    code_again = cmd.execute(["config", "init"], stderr=err_again)
+    assert code_again == 0
+    assert "already exists" in err_again.getvalue().lower()
 
 
 def test_cli_config_set(temp_config_dir):
-    runner = CliRunner()
-    runner.invoke(cli, ["config", "init"])
+    cmd = build_cli()
+    cmd.execute(["config", "init"])
 
     # Set host
-    res_set_host = runner.invoke(cli, ["config", "set", "host", "robot.local"])
-    assert res_set_host.exit_code == 0
+    code_set_host = cmd.execute(["config", "set", "host", "robot.local"])
+    assert code_set_host == 0
 
     # Set port (should parse to int)
-    res_set_port = runner.invoke(cli, ["config", "set", "port", "50052"])
-    assert res_set_port.exit_code == 0
+    code_set_port = cmd.execute(["config", "set", "port", "50052"])
+    assert code_set_port == 0
 
     # Set use_tls (should parse to bool)
-    res_set_tls = runner.invoke(cli, ["config", "set", "use_tls", "true"])
-    assert res_set_tls.exit_code == 0
+    code_set_tls = cmd.execute(["config", "set", "use_tls", "true"])
+    assert code_set_tls == 0
 
     # Verify updated values
     loaded = load_config_file(path=temp_config_dir)
@@ -120,5 +127,6 @@ def test_cli_config_set(temp_config_dir):
     assert loaded["use_tls"] is True
 
     # Invalid key should fail
-    res_invalid = runner.invoke(cli, ["config", "set", "unknown_key", "value"])
-    assert res_invalid.exit_code != 0
+    err_invalid = io.StringIO()
+    code_invalid = cmd.execute(["config", "set", "unknown_key", "value"], stderr=err_invalid)
+    assert code_invalid != 0
