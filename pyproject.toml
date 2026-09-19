@@ -19,6 +19,7 @@ dependencies = [
 
 [project.scripts]
 remote-ros-mcp = "remote_ros_mcp.cli:cli"
+rrmcp = "remote_ros_mcp.cli:cli"
 
 [project.optional-dependencies]
 dev = [

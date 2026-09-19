@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2026-09-20
 
 ### Added
+- **Command Alias `rrmcp`**: Added `rrmcp` entrypoint alias in `pyproject.toml` for fast invocation (`uv run rrmcp ...`).
+- **Comprehensive `.gitignore` Generated via `iggen`**: Standardized multi-platform rules for Linux, macOS, Windows, Python, and VS Code.
 - **Configuration File Management (`remote-ros-mcp config`)**:
   - Platform-standard configuration directory resolution (XDG on Linux, Application Support on macOS, AppData on Windows).
   - Subcommands: `init` (create default file), `path` (print location), `show` (display active/file config with `--json`), `set` (modify and type-cast settings).

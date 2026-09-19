@@ -75,32 +75,32 @@ C++17 및 ROS2 Jazzy 기반의 고성능 gRPC API Gateway인 [`wrosbridge`](../w
   - *경로 재정의 환경변수*: `REMOTE_ROS_CONFIG_PATH`
 
 ```bash
-# 설정 파일 경로 확인
-uv run remote-ros-mcp config path
+# 설정 파일 경로 확인 (remote-ros-mcp 또는 단축어 rrmcp 사용 가능)
+uv run rrmcp config path
 
 # 기본 설정 파일 초기화
-uv run remote-ros-mcp config init
+uv run rrmcp config init
 
 # 설정 값 변경 (host, port, api_key, use_tls, timeout_sec 등)
-uv run remote-ros-mcp config set host 192.168.1.100
-uv run remote-ros-mcp config set port 50051
-uv run remote-ros-mcp config set use_tls false
+uv run rrmcp config set host 192.168.1.100
+uv run rrmcp config set port 50051
+uv run rrmcp config set use_tls false
 
 # 현재 활성 설정 조회 (JSON 출력 지원)
-uv run remote-ros-mcp config show
-uv run remote-ros-mcp config show --json
+uv run rrmcp config show
+uv run rrmcp config show --json
 ```
 
 ### 3. 연결 상태 점검 (CLI)
 ```bash
 # 연결 상태 테스트
-uv run remote-ros-mcp test-connection
+uv run rrmcp test-connection
 
 # 기계 판독용 JSON 출력
-uv run remote-ros-mcp test-connection --json
+uv run rrmcp test-connection --json
 
 # 원격 ROS2 그래프 (노드, 토픽, 서비스) 탐색
-uv run remote-ros-mcp inspect --json
+uv run rrmcp inspect --json
 ```
 
 ---

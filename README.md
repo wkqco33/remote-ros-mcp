@@ -76,30 +76,30 @@ uv sync
   - *Override Variable*: `REMOTE_ROS_CONFIG_PATH`
 
 ```bash
-# Print config path
-uv run remote-ros-mcp config path
+# Print config path (using rrmcp alias)
+uv run rrmcp config path
 
 # Initialize default configuration
-uv run remote-ros-mcp config init
+uv run rrmcp config init
 
 # Set configuration parameters
-uv run remote-ros-mcp config set host 192.168.1.100
-uv run remote-ros-mcp config set port 50051
+uv run rrmcp config set host 192.168.1.100
+uv run rrmcp config set port 50051
 
 # View active configuration
-uv run remote-ros-mcp config show --json
+uv run rrmcp config show --json
 ```
 
 ### 4. CLI Diagnostics
 ```bash
 # Test connection health
-uv run remote-ros-mcp test-connection
+uv run rrmcp test-connection
 
 # Machine-readable JSON output
-uv run remote-ros-mcp test-connection --json
+uv run rrmcp test-connection --json
 
 # Discover active ROS2 graph
-uv run remote-ros-mcp inspect --json
+uv run rrmcp inspect --json
 ```
 
 ---
