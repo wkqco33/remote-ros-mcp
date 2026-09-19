@@ -1,0 +1,69 @@
+[project]
+name = "remote-ros-mcp"
+version = "0.1.0"
+description = "Production-grade MCP server for ROS2 robotics development with wrosbridge gateway"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "Robotics & AI Team" }
+]
+license = { text = "Apache-2.0" }
+dependencies = [
+    "mcp>=1.3.0,<2.0.0",
+    "grpcio>=1.62.0",
+    "protobuf>=4.25.0",
+    "pydantic>=2.7.0",
+    "click>=8.1.7",
+    "rich>=13.7.0",
+]
+
+[project.scripts]
+remote-ros-mcp = "remote_ros_mcp.cli:cli"
+
+[project.optional-dependencies]
+dev = [
+    "grpcio-tools>=1.62.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.4.0",
+    "mypy>=1.9.0",
+    "types-protobuf>=4.25.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = [
+    "src/remote_ros_mcp/proto",
+    "proto",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "B"]
+ignore = ["B008"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+pythonpath = ["src", "."]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+[tool.coverage.run]
+omit = [
+    "src/remote_ros_mcp/proto/*",
+]
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = false
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+exclude = ["remote_ros_mcp/proto/.*"]

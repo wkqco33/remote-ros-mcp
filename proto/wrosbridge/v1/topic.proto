@@ -1,0 +1,44 @@
+// wrosbridge.v1 topic service.
+// typed topic 구독(server-streaming)과 발행(unary)을 제공한다.
+// payload는 ROS2 메시지의 직렬화된 바이트이며, type 필드가 ROS2 타입을 식별한다.
+syntax = "proto3";
+
+package wrosbridge.v1;
+
+import "wrosbridge/v1/common.proto";
+
+option go_package = "wrosbridge/v1;wrosbridgev1";
+
+// 토픽에서 전달되는 단일 메시지.
+message TopicMessage {
+  string topic = 1;
+  string type = 2;        // ROS2 타입 (예: geometry_msgs/msg/Twist)
+  bytes payload = 3;      // 직렬화된 ROS2 메시지
+  uint64 sequence = 4;    // 토픽별 단조 증가 시퀀스
+  Header header = 5;      // 해당되는 경우 timestamp/frame_id
+}
+
+// 토픽 구독 요청.
+message SubscribeRequest {
+  string topic = 1;
+  string type = 2;        // 구독할 ROS2 타입
+}
+
+// 토픽 발행 요청.
+message PublishRequest {
+  string topic = 1;
+  string type = 2;        // 발행할 ROS2 타입
+  bytes payload = 3;      // 직렬화된 ROS2 메시지
+}
+
+// 토픽 발행 응답.
+message PublishResponse {
+  uint64 sequence = 1;    // 발행된 메시지의 시퀀스
+}
+
+service TopicService {
+  // 토픽을 구독하고 메시지 스트림을 받는다.
+  rpc Subscribe(SubscribeRequest) returns (stream TopicMessage);
+  // 토픽에 메시지를 발행한다.
+  rpc Publish(PublishRequest) returns (PublishResponse);
+}

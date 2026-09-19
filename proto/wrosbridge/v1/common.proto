@@ -1,0 +1,35 @@
+// wrosbridge.v1 공통 메시지 정의.
+// 버전 관리 규칙: field number를 재사용하지 않고, 삭제 시 예약한다.
+syntax = "proto3";
+
+package wrosbridge.v1;
+
+option go_package = "wrosbridge/v1;wrosbridgev1";
+
+// 시간 표현. Unix epoch 기준.
+message Timestamp {
+  int64 seconds = 1;
+  int32 nanos = 2;
+}
+
+// ROS2 std_msgs/msg/Header 에 대응하는 공통 헤더.
+message Header {
+  Timestamp stamp = 1;
+  string frame_id = 2;
+}
+
+// 3차원 벡터 (geometry_msgs/msg/Vector3 대응)
+message Vector3 {
+  double x = 1;
+  double y = 2;
+  double z = 3;
+}
+
+// 4원수 회전 (geometry_msgs/msg/Quaternion 대응)
+message Quaternion {
+  double x = 1;
+  double y = 2;
+  double z = 3;
+  double w = 4;
+}
+

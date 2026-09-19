@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package wrosbridge.v1;
+
+import "google/protobuf/timestamp.proto";
+import "wrosbridge/v1/common.proto";
+
+option go_package = "wrosbridge/v1;wrosbridgev1";
+
+// ROS2 액션 목표의 생명주기 상태 (ACT-001)
+enum ActionGoalStatus {
+  ACTION_GOAL_STATUS_UNSPECIFIED = 0;
+  STATUS_UNKNOWN = 1;
+  STATUS_ACCEPTED = 2;
+  STATUS_EXECUTING = 3;
+  STATUS_CANCELING = 4;
+  STATUS_SUCCEEDED = 5;
+  STATUS_CANCELED = 6;
+  STATUS_ABORTED = 7;
+}
+
+// SendGoal 요청 메시지
+message SendGoalRequest {
+  Header header = 1;
+  string action_name = 2;
+  string action_type = 3;
+  string goal_id = 4;
+  bytes goal_payload = 5;
+}
+
+// SendGoal 응답 메시지
+message SendGoalResponse {
+  Header header = 1;
+  string goal_id = 2;
+  bool accepted = 3;
+  google.protobuf.Timestamp stamp = 4;
+  string message = 5;
+}
+
+// CancelGoal 요청 메시지
+message CancelGoalRequest {
+  Header header = 1;
+  string action_name = 2;
+  string goal_id = 3;
+}
+
+// CancelGoal 응답 메시지
+message CancelGoalResponse {
+  Header header = 1;
+  string goal_id = 2;
+  bool canceled = 3;
+  string message = 4;
+}
+
+// GetResult 요청 메시지
+message GetResultRequest {
+  Header header = 1;
+  string action_name = 2;
+  string goal_id = 3;
+}
+
+// GetResult 응답 메시지
+message GetResultResponse {
+  Header header = 1;
+  string goal_id = 2;
+  ActionGoalStatus status = 3;
+  bytes result_payload = 4;
+  string message = 5;
+}
+
+// Feedback 스트리밍 요청 메시지
+message FeedbackStreamRequest {
+  Header header = 1;
+  string action_name = 2;
+  string goal_id = 3;
+}
+
+// Feedback 스트리밍 응답 메시지
+message FeedbackStreamResponse {
+  Header header = 1;
+  string goal_id = 2;
+  ActionGoalStatus status = 3;
+  bytes feedback_payload = 4;
+}
+
+// ROS2 Action gRPC 서비스 정의
+service ActionService {
+  rpc SendGoal(SendGoalRequest) returns (SendGoalResponse);
+  rpc CancelGoal(CancelGoalRequest) returns (CancelGoalResponse);
+  rpc GetResult(GetResultRequest) returns (GetResultResponse);
+  rpc StreamFeedback(FeedbackStreamRequest) returns (stream FeedbackStreamResponse);
+}

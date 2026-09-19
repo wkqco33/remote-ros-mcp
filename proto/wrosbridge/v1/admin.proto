@@ -1,0 +1,162 @@
+syntax = "proto3";
+
+package wrosbridge.v1;
+
+import "google/protobuf/timestamp.proto";
+import "wrosbridge/v1/common.proto";
+
+option go_package = "wrosbridge/v1;wrosbridgev1";
+
+// -------------------------------------------------------------
+// 1. 파라미터 관련 정의 (ADM-001 ~ ADM-003)
+// -------------------------------------------------------------
+
+enum ParameterType {
+  PARAMETER_TYPE_UNSPECIFIED = 0;
+  PARAM_BOOL = 1;
+  PARAM_INT = 2;
+  PARAM_DOUBLE = 3;
+  PARAM_STRING = 4;
+  PARAM_BYTE_ARRAY = 5;
+}
+
+message ParameterValue {
+  ParameterType type = 1;
+  bool bool_value = 2;
+  int64 int_value = 3;
+  double double_value = 4;
+  string string_value = 5;
+  bytes bytes_value = 6;
+}
+
+message Parameter {
+  string name = 1;
+  ParameterValue value = 2;
+}
+
+message GetParametersRequest {
+  Header header = 1;
+  string node_name = 2;
+  repeated string names = 3;
+}
+
+message GetParametersResponse {
+  Header header = 1;
+  repeated Parameter parameters = 2;
+}
+
+message SetParametersRequest {
+  Header header = 1;
+  string node_name = 2;
+  repeated Parameter parameters = 3;
+}
+
+message SetParametersResponse {
+  Header header = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message ParameterEvent {
+  Header header = 1;
+  string node_name = 2;
+  repeated Parameter changed_parameters = 3;
+  repeated string deleted_parameters = 4;
+}
+
+message StreamParameterEventsRequest {
+  Header header = 1;
+  string node_filter = 2;
+}
+
+// -------------------------------------------------------------
+// 2. TF (Transform) 관련 정의 (ADM-004 ~ ADM-005)
+// -------------------------------------------------------------
+
+message TFTransform {
+  Header header = 1;
+  string frame_id = 2;
+  string child_frame_id = 3;
+  google.protobuf.Timestamp stamp = 4;
+  Vector3 translation = 5;
+  Quaternion rotation = 6;
+}
+
+message LookupTFRequest {
+  Header header = 1;
+  string target_frame = 2;
+  string source_frame = 3;
+  google.protobuf.Timestamp time = 4;
+}
+
+message LookupTFResponse {
+  Header header = 1;
+  bool success = 2;
+  TFTransform transform = 3;
+  string message = 4;
+}
+
+message StreamTFRequest {
+  Header header = 1;
+  string target_frame = 2;
+  string source_frame = 3;
+  double rate_hz = 4;
+}
+
+// -------------------------------------------------------------
+// 3. ROS2 Graph 관련 정의 (ADM-006 ~ ADM-007)
+// -------------------------------------------------------------
+
+message GraphNodeInfo {
+  string node_name = 1;
+  string node_namespace = 2;
+  repeated string published_topics = 3;
+  repeated string subscribed_topics = 4;
+  repeated string services = 5;
+}
+
+message GetGraphRequest {
+  Header header = 1;
+}
+
+message GetGraphResponse {
+  Header header = 1;
+  repeated GraphNodeInfo nodes = 2;
+}
+
+enum GraphChangeType {
+  GRAPH_CHANGE_UNSPECIFIED = 0;
+  NODE_ADDED = 1;
+  NODE_REMOVED = 2;
+  TOPIC_ADDED = 3;
+  TOPIC_REMOVED = 4;
+}
+
+message GraphChangeEvent {
+  Header header = 1;
+  GraphChangeType change_type = 2;
+  string resource_name = 3;
+}
+
+message StreamGraphChangesRequest {
+  Header header = 1;
+}
+
+// -------------------------------------------------------------
+// 4. AdminService gRPC 서비스 정의
+// -------------------------------------------------------------
+
+service AdminService {
+  // Parameter APIs
+  rpc GetParameters(GetParametersRequest) returns (GetParametersResponse);
+  rpc SetParameters(SetParametersRequest) returns (SetParametersResponse);
+  rpc StreamParameterEvents(StreamParameterEventsRequest) returns (stream ParameterEvent);
+
+  // TF APIs
+  rpc LookupTF(LookupTFRequest) returns (LookupTFResponse);
+  rpc StreamTF(StreamTFRequest) returns (stream TFTransform);
+
+  // Graph APIs
+  rpc GetGraph(GetGraphRequest) returns (GetGraphResponse);
+  rpc StreamGraphChanges(StreamGraphChangesRequest) returns (stream GraphChangeEvent);
+}
